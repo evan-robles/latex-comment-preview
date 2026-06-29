@@ -26,14 +26,6 @@ let ready = false;
 const pending = new Map<string, { tex: string; display: boolean; fontPx: number }>();
 const dims = new Map<string, Dimensions>();
 
-let output: vscode.OutputChannel | undefined;
-function log(msg: string): void {
-  if (!output) {
-    output = vscode.window.createOutputChannel("LaTeX Measurer");
-  }
-  output.appendLine(msg);
-}
-
 function key(tex: string, display: boolean, fontPx: number): string {
   return `${fontPx}|${display ? 1 : 0}|${tex}`;
 }
@@ -69,9 +61,6 @@ export function initMeasurer(
             height: Math.ceil(msg.height),
           });
           pending.delete(msg.key);
-          log(
-            `measured key=${msg.key} width=${msg.width} height=${msg.height}`
-          );
           onMeasured?.();
         }
       });
@@ -109,20 +98,15 @@ export function requestMeasure(
     return;
   }
   pending.set(k, { tex, display, fontPx });
-  log(
-    `request key=${k} viewResolved=${!!view} ready=${ready} (will ${
-      view && ready ? "send now" : "queue"
-    })`
-  );
   if (view && ready) {
     sendMeasure(k, tex, display, fontPx);
   } else if (!view) {
     // The WebviewView hasn't been resolved yet (it only resolves when shown at
     // least once). Proactively reveal it so it initializes; queued requests then
-    // flush on "ready". focus the view without stealing editor focus.
+    // flush on "ready".
     vscode.commands.executeCommand(`${MEASURER_VIEW_ID}.focus`).then(
-      () => log("revealed measurer view to initialize"),
-      (e) => log("reveal failed: " + String(e))
+      () => undefined,
+      () => undefined
     );
   }
 }
@@ -204,7 +188,7 @@ function buildHtml(webview: vscode.Webview): string {
     if (el && el.style) { el.style.fontSize = fontPx + 'px'; }
     // Force layout, then measure.
     const rect = el.getBoundingClientRect();
-    vscode.postMessage({ type:'measured', key, width: rect.width, height: rect.height, dbg: { fontPx } });
+    vscode.postMessage({ type:'measured', key, width: rect.width, height: rect.height });
   }
   // Remember everything we measure so we can RE-measure once fonts finish
   // loading (the first measurement may happen before KaTeX fonts are applied,
