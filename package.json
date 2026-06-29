@@ -1,0 +1,98 @@
+{
+  "name": "latex-comment-preview",
+  "displayName": "LaTeX Comment Preview",
+  "description": "Preview LaTeX math written inside code comments (Python # lines and ''' / \"\"\" docstrings). Hover to see rendered math, or move the cursor into a $...$ span for a live inline render.",
+  "version": "0.1.0",
+  "publisher": "evan-robles",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "latex",
+    "math",
+    "katex",
+    "comment",
+    "preview",
+    "python"
+  ],
+  "activationEvents": [
+    "onLanguage:python"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "LaTeX Comment Preview",
+      "properties": {
+        "latexCommentPreview.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable LaTeX previews in comments."
+        },
+        "latexCommentPreview.inlineOnCursor": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a rendered inline preview when the caret or selection is inside a $...$ span."
+        },
+        "latexCommentPreview.hover": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a rendered preview when hovering a $...$ span in a comment."
+        },
+        "latexCommentPreview.maxRenderLength": {
+          "type": "number",
+          "default": 2000,
+          "description": "Skip rendering LaTeX spans longer than this many characters (safety guard)."
+        },
+        "latexCommentPreview.renderColor": {
+          "type": "string",
+          "default": "",
+          "description": "CSS color for the inline rendered math (e.g. \"#6a9955\"). Leave empty to auto-match the editor comment color. Does not affect the hover preview."
+        },
+        "latexCommentPreview.useWebviewMeasure": {
+          "type": "boolean",
+          "default": false,
+          "description": "TEST: use a background webview to measure exact rendered math width (eliminates the trailing gap). Adds a 'LaTeX Measurer' view to the Explorer sidebar that must be revealed once to initialize."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "latexCommentPreview.toggle",
+        "title": "LaTeX Comment Preview: Toggle"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "latexCommentPreview.measurer",
+          "name": "LaTeX Measurer",
+          "when": "config.latexCommentPreview.useWebviewMeasure",
+          "visibility": "collapsed"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.js --production",
+    "watch": "node esbuild.js --watch",
+    "compile-tests": "tsc -p ./",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "katex": "^0.16.11"
+  },
+  "devDependencies": {
+    "@types/katex": "^0.16.7",
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.4.0"
+  }
+}
