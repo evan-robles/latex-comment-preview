@@ -2,7 +2,7 @@
   "name": "latex-comment-preview",
   "displayName": "LaTeX Comment Preview",
   "description": "Preview LaTeX math written inside code comments (Python # lines and ''' / \"\"\" docstrings). Hover to see rendered math, or move the cursor into a $...$ span for a live inline render.",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "publisher": "evan-robles",
   "license": "MIT",
   "repository": {
