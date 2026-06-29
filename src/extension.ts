@@ -270,8 +270,10 @@ function updateInlineDecorations(editor: vscode.TextEditor, maxLen: number): voi
       renderOptions: {
         before: {
           contentIconPath: vscode.Uri.parse(result.dataUri),
-          // Pull the icon onto the text baseline so it doesn't sit above the
-          // line. middle-align the image against the surrounding line box.
+          // Pin explicit width/height so VS Code renders the SVG at its true
+          // size instead of squashing tall content (fractions) to line height.
+          width: `${result.width}px`,
+          height: `${result.height}px`,
           textDecoration: "none; vertical-align: middle; line-height: 1;",
         },
       },

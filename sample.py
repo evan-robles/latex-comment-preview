@@ -1,7 +1,7 @@
 # Sample file for testing LaTeX Comment Preview.
 # Hover over the math below, or move your cursor into one of the math spans.
 
-# The overlap matrix element is the inner product $S_{\mu\nu} = \langle \phi_\mu | \phi_\nu \rangle$.
+# The overlap matrix element is the inner product $S_{\mu\nu} = \langle \phi_\mu | \phi_\nu \rangle = \int \phi_\mu^* \phi_\nu$
 
 # Display math also works: $$F\mathbf{c} = \epsilon S \mathbf{c}$$
 
@@ -12,7 +12,8 @@ def scf_energy():
     The Fock matrix is $F = h + \mathbf{J} - \mathbf{K}$ where the exchange term keeps
     same-spin electrons apart. Total energy:
 
-    $$E = \sum_{\mu\nu} P_{\mu\nu} (h_{\mu\nu} + F_{\mu\nu}) / 2$$
+    $$E = \frac{\sum_{\mu\nu} P_{\mu\nu} (h_{\mu\nu} + F_{\mu\nu})}{2}$$
+    
     """
     pass
 

@@ -109,13 +109,14 @@ export function renderLatex(
           clampToLine ? 600 : 900,
           Math.max(20, Math.round(widthEm * fontPx) + 8)
         );
+  const metrics = measuredMetricsPx(prepared, display, fontPx);
   let height: number;
   if (clampToLine) {
-    // Headroom for content that rises above the baseline (superscripts) or drops
-    // below (subscripts). 18px clipped the top of superscripted glyphs; 22px
-    // gives clearance while staying within a normal editor line so it doesn't
-    // displace the line.
-    height = 22;
+    // Grow the box to the true content height so tall math (fractions, sums with
+    // limits) renders full size; the editor line grows to fit. Floor at 22px so
+    // ordinary inline math keeps a little headroom. (Adjacent-line spacing for
+    // very tall math is handled by the author leaving a blank line.)
+    height = Math.max(22, metrics.total + 4);
   } else {
     const lineH = display ? 30 : 26;
     height = rows > 1 ? rows * lineH + 12 : display ? 56 : 30;
@@ -128,6 +129,39 @@ export function renderLatex(
   const result: RenderResult = { dataUri, width, height };
   cache.set(key, { color, result, error: null });
   return { result, error: null };
+}
+
+/**
+ * Rendered metrics (px) from KaTeX's dom tree: `height` above the baseline,
+ * `depth` below, and `total`. Used to grow the inline box for tall content
+ * (fractions) and to baseline-align the image so `E =` etc. sit on the text
+ * baseline instead of overlapping neighboring lines.
+ */
+function measuredMetricsPx(
+  tex: string,
+  display: boolean,
+  fontPx: number
+): { height: number; depth: number; total: number } {
+  try {
+    const k = katex as unknown as {
+      __renderToDomTree?: (
+        t: string,
+        o: object
+      ) => { height: number; depth: number };
+    };
+    if (typeof k.__renderToDomTree === "function") {
+      const tree = k.__renderToDomTree(tex, {
+        displayMode: display,
+        throwOnError: false,
+      });
+      const h = Math.ceil(tree.height * fontPx);
+      const d = Math.ceil(tree.depth * fontPx);
+      return { height: h, depth: d, total: h + d };
+    }
+  } catch {
+    // fall through
+  }
+  return { height: 12, depth: 4, total: 16 };
 }
 
 /**
