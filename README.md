@@ -107,28 +107,10 @@ Command: **LaTeX Comment Preview: Toggle** (`latexCommentPreview.toggle`).
 
 ## Known limitations
 
-- The scanner is line-based, not a full Python grammar; exotic nesting of quotes
-  may occasionally mis-classify a region. Real-world code is handled correctly.
-- **Inline width without the webview measurer is an estimate.** VS Code does not
-  expose the rendered math's true pixel width to the extension host, so with
-  `useWebviewMeasure` off, the inline box is sized by a font-metric estimate that
-  errs slightly generous — it never clips, but may leave a few px of trailing
-  gap. Enable `useWebviewMeasure` for exact widths (see below).
-- **The webview measurer adds a small "LaTeX Measurer" view** to the Explorer
-  sidebar. VS Code has no fully-hidden webview, so this view must exist for the
-  measurement to run; it auto-reveals on first use and is safe to leave
-  collapsed. It does nothing user-facing — it only measures.
-- **Theme color matching is best-effort.** Colors are read from the active
-  theme's JSON by matching TextMate scopes (`comment`, `string`,
-  `string.quoted.docstring`). Stock and well-scoped themes match exactly; an
-  unusually-scoped theme may resolve a slightly-off color. Override with
-  `renderColor` if needed. Built-in themes that VS Code does not expose as a
-  file fall back to the editor foreground.
-- The cursor-revealed raw source still occupies columns the caret travels
-  through, since decorations hide text visually but don't remove it from the
-  buffer.
-- A `$x$` that you wrote as *prose about the syntax* will still render as math —
-  that is `$...$` doing its job.
+- Inline width is an estimate that may leave a small trailing gap (it never
+  clips). For exact widths, enable `useWebviewMeasure` — which adds a small
+  "LaTeX Measurer" view to the Explorer sidebar (safe to leave collapsed; it only
+  measures).
 
 ## License
 

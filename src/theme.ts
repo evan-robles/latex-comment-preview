@@ -51,23 +51,38 @@ export function clearThemeCache(): void {
   cached = null;
 }
 
-/** Find the on-disk JSON path for a theme by its display label. */
-function findThemePath(label: string): string | undefined {
+/**
+ * Find the on-disk JSON path for the active theme.
+ *
+ * `workbench.colorTheme` stores a theme's `id` when it has one (built-in default
+ * themes like "Dark+", "Dark Modern" rely on this), otherwise its `label`.
+ * Built-in themes set `label` to an NLS placeholder ("%darkModernThemeLabel%"),
+ * so matching on `label` alone fails for them — which is why ONLY the default
+ * themes were missing their color. We match `id` first, then `label`, and search
+ * `id`-less themes by label too.
+ */
+function findThemePath(idOrLabel: string): string | undefined {
+  let labelFallback: string | undefined;
   for (const ext of vscode.extensions.all) {
-    const contributes = ext.packageJSON?.contributes;
-    const themes = contributes?.themes;
+    const themes = ext.packageJSON?.contributes?.themes;
     if (!Array.isArray(themes)) {
       continue;
     }
     for (const t of themes) {
-      if (t.label === label || t.id === label) {
-        if (typeof t.path === "string") {
-          return path.join(ext.extensionPath, t.path);
-        }
+      if (typeof t.path !== "string") {
+        continue;
+      }
+      // Primary: id match (the value built-in themes store in colorTheme).
+      if (t.id && t.id === idOrLabel) {
+        return path.join(ext.extensionPath, t.path);
+      }
+      // Secondary: literal label match (extension themes without an id).
+      if (t.label && t.label === idOrLabel && !labelFallback) {
+        labelFallback = path.join(ext.extensionPath, t.path);
       }
     }
   }
-  return undefined;
+  return labelFallback;
 }
 
 /** Parse a theme JSON file, following `include` up to a small depth limit. */
@@ -177,28 +192,21 @@ function applyUserCustomizations(colors: ThemeColors, themeName: string): void {
  * embedded/punctuation/quoted-section scopes.
  */
 function isBaseStringScope(scope: string): boolean {
+  // The ONLY reliably-correct base string color is the bare `string` scope.
+  // Language-qualified scopes (string.quoted.pug, string.quoted.double.xml, ...)
+  // carry that language's string color, not the general one, and must NOT be used
+  // as the docstring color — doing so picks up e.g. pug/xml blue instead of the
+  // real Python string color.
   if (scope === "string") {
     return true;
   }
-  if (!scope.startsWith("string")) {
-    return false;
+  // Accept only the *generic* quoted forms with no further language qualifier:
+  //   string.quoted.double / string.quoted.single  (exactly, nothing after).
+  // Reject string.quoted.double.xml, string.quoted.pug, etc.
+  if (scope === "string.quoted.double" || scope === "string.quoted.single") {
+    return true;
   }
-  const excluded = [
-    "string.comment",
-    "string.regexp",
-    "string.other",
-    "string.unquoted",
-  ];
-  if (excluded.some((e) => scope.startsWith(e))) {
-    return false;
-  }
-  // Reject scopes whose color is about embedded source / punctuation rather than
-  // the string body itself.
-  if (/embedded|punctuation|section|variable/.test(scope)) {
-    return false;
-  }
-  // Accept the common quoted forms: string.quoted.*, string.quoted.double, etc.
-  return scope.startsWith("string.quoted") || scope.startsWith("string ");
+  return false;
 }
 
 function normalizeScopes(scope: unknown): string[] {
@@ -212,9 +220,71 @@ function normalizeScopes(scope: unknown): string[] {
   return [];
 }
 
-/** Minimal JSONC parse: strip // and /* *​/ comments, then JSON.parse. */
+/**
+ * Parse JSON-with-comments (theme files are JSONC). Strips // line comments and
+ * block comments while respecting string literals, then removes trailing commas,
+ * then JSON.parse. A regex approach is unsafe here because comments can appear
+ * INLINE (e.g. `"scope" // see https://...`) and `//` also occurs inside string
+ * URLs — a string-aware scanner is required. VS Code's own theme files contain
+ * inline `//` comments, so without this they fail to parse and yield no colors.
+ */
 function parseJsonc(text: string): any {
-  const noBlock = text.replace(/\/\*[\s\S]*?\*\//g, "");
-  const noLine = noBlock.replace(/^\s*\/\/.*$/gm, "");
-  return JSON.parse(noLine);
+  let out = "";
+  let i = 0;
+  const n = text.length;
+  let inStr = false;
+  let quote = "";
+
+  while (i < n) {
+    const ch = text[i];
+    const next = i + 1 < n ? text[i + 1] : "";
+
+    if (inStr) {
+      out += ch;
+      if (ch === "\\") {
+        // copy the escaped char verbatim
+        if (i + 1 < n) {
+          out += text[i + 1];
+          i += 2;
+          continue;
+        }
+      } else if (ch === quote) {
+        inStr = false;
+      }
+      i++;
+      continue;
+    }
+
+    // not in a string
+    if (ch === '"' || ch === "'") {
+      inStr = true;
+      quote = ch;
+      out += ch;
+      i++;
+      continue;
+    }
+    if (ch === "/" && next === "/") {
+      // line comment — skip to end of line
+      i += 2;
+      while (i < n && text[i] !== "\n") {
+        i++;
+      }
+      continue;
+    }
+    if (ch === "/" && next === "*") {
+      // block comment — skip to */
+      i += 2;
+      while (i < n && !(text[i] === "*" && text[i + 1] === "/")) {
+        i++;
+      }
+      i += 2;
+      continue;
+    }
+    out += ch;
+    i++;
+  }
+
+  // Remove trailing commas before } or ] (also valid in JSONC, invalid in JSON).
+  out = out.replace(/,(\s*[}\]])/g, "$1");
+  return JSON.parse(out);
 }
