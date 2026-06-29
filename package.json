@@ -5,6 +5,10 @@
   "version": "0.1.0",
   "publisher": "evan-robles",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/evan-robles/latex-comment-preview.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },

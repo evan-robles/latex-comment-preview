@@ -9,7 +9,7 @@ def scf_energy():
     """
     Computes the SCF energy.
 
-    The Fock matrix is $F = h + J - K$ where the exchange term keeps
+    The Fock matrix is $F = h + \mathbf{J} - \mathbf{K}$ where the exchange term keeps
     same-spin electrons apart. Total energy:
 
     $$E = \sum_{\mu\nu} P_{\mu\nu} (h_{\mu\nu} + F_{\mu\nu}) / 2$$

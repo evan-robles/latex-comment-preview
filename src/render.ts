@@ -76,14 +76,15 @@ export function renderLatex(
   // so we still err slightly generous (+ small pad) — a few harmless px beats
   // clipping. Rows split on \\ for multi-line aligned blocks.
   let widthEm = 0;
+  let measureHtml = "";
   try {
-    const htmlForMeasure = katex.renderToString(prepared, {
+    measureHtml = katex.renderToString(prepared, {
       displayMode: display,
       output: "html",
       throwOnError: true,
       strict: false,
     });
-    widthEm = estimateEmFromHtml(htmlForMeasure);
+    widthEm = estimateEmFromHtml(measureHtml);
   } catch {
     widthEm = Math.max(prepared.length * 0.5, 1); // fallback
   }
@@ -93,10 +94,10 @@ export function renderLatex(
   // which errs GENEROUS on purpose (a slight gap beats clipping; a tighter
   // calibration was tried and clipped). True pixel width is not computable in
   // Node — see README.
-  // Measured width is getBoundingClientRect, which excludes italic side-bearing /
-  // overhang on trailing math-italic glyphs (d, r, f, ...). Add a small guard so
-  // that tail isn't clipped by the following text. Kept small to stay visually
-  // tight — this is a pixel of safety, not the old blunt estimate pad.
+  // Trailing math-italic glyphs (d, r, f, ...) have italic side-bearing that
+  // getBoundingClientRect does not fully include, so a small guard is required or
+  // the tail clips. +9 never clips; it can leave a few px of gap on short
+  // expressions — that tradeoff (gap, never clip) is intentional.
   const MEASURE_GUARD = 9;
   const width =
     exactWidth && exactWidth > 0
@@ -110,8 +111,11 @@ export function renderLatex(
         );
   let height: number;
   if (clampToLine) {
-    // Never exceed ~1.3 line-heights; multi-row blocks shrink to fit.
-    height = 18;
+    // Headroom for content that rises above the baseline (superscripts) or drops
+    // below (subscripts). 18px clipped the top of superscripted glyphs; 22px
+    // gives clearance while staying within a normal editor line so it doesn't
+    // displace the line.
+    height = 22;
   } else {
     const lineH = display ? 30 : 26;
     height = rows > 1 ? rows * lineH + 12 : display ? 56 : 30;
