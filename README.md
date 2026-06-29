@@ -82,26 +82,51 @@ Note the last line: `#`/`$` inside a normal string literal are ignored — only 
 | `latexCommentPreview.hover` | `true` | Show the hover popup. |
 | `latexCommentPreview.inlineOnCursor` | `true` | Show the inline render when the cursor is in a span. |
 | `latexCommentPreview.maxRenderLength` | `2000` | Skip spans longer than this (safety guard). |
+| `latexCommentPreview.renderColor` | `""` | Override the inline math color (CSS color). Empty = auto-match the theme's comment/docstring color. Does not affect the hover. |
+| `latexCommentPreview.useWebviewMeasure` | `false` | Use a background webview to measure exact rendered width (removes the trailing gap). Adds a "LaTeX Measurer" view to the Explorer sidebar. |
 
 Command: **LaTeX Comment Preview: Toggle** (`latexCommentPreview.toggle`).
 
 ## How it works
 
 1. A lightweight line scanner tracks comment / docstring / string state and
-   extracts `$...$` and `$$...$$` spans with exact document ranges
-   (`src/parser.ts`).
+   extracts `$...$` and `$$...$$` spans with exact document ranges, tagging each
+   span as `comment` or `docstring` (`src/parser.ts`).
 2. Each span is rendered by KaTeX to MathML, wrapped in an SVG `foreignObject`,
-   and embedded as a `data:` URI so it can appear in both a Markdown hover and a
-   `contentIconPath` decoration (`src/render.ts`). Results are cached.
-3. The extension registers a `HoverProvider` and listens to selection changes to
-   paint the cursor-triggered inline decoration (`src/extension.ts`).
+   and embedded as a `data:` URI so it can appear in both a Markdown hover and an
+   inline decoration (`src/render.ts`). Results are cached.
+3. Inline rendering hides the raw `$...$` source and draws the math in its place;
+   the raw source reappears when the caret is on that line so you can edit it.
+4. Span color is resolved from the active theme's own `comment` / `string`
+   token colors (read from the theme JSON), so the math matches the surrounding
+   code (`src/theme.ts`).
+5. Inline width is measured exactly by a background webview that lays the math
+   out with real KaTeX fonts and reports `getBoundingClientRect()`, eliminating
+   the trailing gap (`src/measurer.ts`), gated by `useWebviewMeasure`. When that
+   setting is off, a font-metric estimate is used instead.
 
 ## Known limitations
 
 - The scanner is line-based, not a full Python grammar; exotic nesting of quotes
   may occasionally mis-classify a region. Real-world code is handled correctly.
-- Math color is a neutral tone chosen for contrast on both light and dark themes
-  (the extension host does not expose computed theme colors).
+- **Inline width without the webview measurer is an estimate.** VS Code does not
+  expose the rendered math's true pixel width to the extension host, so with
+  `useWebviewMeasure` off, the inline box is sized by a font-metric estimate that
+  errs slightly generous — it never clips, but may leave a few px of trailing
+  gap. Enable `useWebviewMeasure` for exact widths (see below).
+- **The webview measurer adds a small "LaTeX Measurer" view** to the Explorer
+  sidebar. VS Code has no fully-hidden webview, so this view must exist for the
+  measurement to run; it auto-reveals on first use and is safe to leave
+  collapsed. It does nothing user-facing — it only measures.
+- **Theme color matching is best-effort.** Colors are read from the active
+  theme's JSON by matching TextMate scopes (`comment`, `string`,
+  `string.quoted.docstring`). Stock and well-scoped themes match exactly; an
+  unusually-scoped theme may resolve a slightly-off color. Override with
+  `renderColor` if needed. Built-in themes that VS Code does not expose as a
+  file fall back to the editor foreground.
+- The cursor-revealed raw source still occupies columns the caret travels
+  through, since decorations hide text visually but don't remove it from the
+  buffer.
 - A `$x$` that you wrote as *prose about the syntax* will still render as math —
   that is `$...$` doing its job.
 
