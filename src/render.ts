@@ -116,7 +116,7 @@ export function renderLatex(
     // limits) renders full size; the editor line grows to fit. Floor at 22px so
     // ordinary inline math keeps a little headroom. (Adjacent-line spacing for
     // very tall math is handled by the author leaving a blank line.)
-    height = Math.max(22, metrics.total + 4);
+    height = Math.max(22, metrics.total + 6);
   } else {
     const lineH = display ? 30 : 26;
     height = rows > 1 ? rows * lineH + 12 : display ? 56 : 30;

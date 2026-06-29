@@ -4,6 +4,8 @@ Preview LaTeX math written inside **Python comments** — `#` line comments and
 `'''` / `"""` docstrings — without leaving the editor. Inspired by inline-math
 preview extensions, scoped to comments so your math notation in code reads as math.
 
+![LaTeX Comment Preview in action](images/demo.gif)
+
 ## What it does
 
 - **Hover preview** — hover the mouse over a `$...$` or `$$...$$` span inside a

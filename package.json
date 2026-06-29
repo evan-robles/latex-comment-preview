@@ -1,10 +1,11 @@
 {
   "name": "latex-comment-preview",
   "displayName": "LaTeX Comment Preview",
-  "description": "Preview LaTeX math written inside code comments (Python # lines and ''' / \"\"\" docstrings). Hover to see rendered math, or move the cursor into a $...$ span for a live inline render.",
-  "version": "1.0.1",
+  "description": "Render LaTeX math inline in your code comments and docstrings. Equations in $...$ display as real math, right where you write them.",
+  "version": "1.0.3",
   "publisher": "evan-robles",
   "license": "MIT",
+  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/evan-robles/latex-comment-preview.git"
@@ -20,9 +21,19 @@
     "latex",
     "math",
     "katex",
+    "mathjax",
+    "equation",
+    "formula",
     "comment",
+    "docstring",
     "preview",
-    "python"
+    "inline",
+    "render",
+    "python",
+    "scientific",
+    "jupyter",
+    "sphinx",
+    "numpy"
   ],
   "activationEvents": [
     "onLanguage:python"
