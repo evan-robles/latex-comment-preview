@@ -28,10 +28,14 @@ Math inside ordinary string literals is **not** rendered (only comments), and a
 
 ## Install
 
-From the packaged `.vsix`:
+**From the VS Code Marketplace (recommended):** open the **Extensions** panel
+in VS Code (`Cmd/Ctrl+Shift+X`), search for **"LaTeX Comment Preview"**, and
+click **Install**.
+
+**From a `.vsix` file:**
 
 ```bash
-code --install-extension latex-comment-preview-0.1.0.vsix
+code --install-extension latex-comment-preview-1.0.3.vsix
 ```
 
 Or in VS Code: **Extensions panel → ⋯ menu → Install from VSIX…**
